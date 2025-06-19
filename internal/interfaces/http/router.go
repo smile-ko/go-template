@@ -17,8 +17,12 @@ import (
 )
 
 func NewRouter(app *fiber.App, cfg *config.Config, pg *postgres.Postgres, l logger.Interface) {
-	// Options
 	if cfg.App.EnvName == "dev" {
+		// Swagger docs
+		if cfg.Swagger.Enabled {
+			setupSwagger(app, cfg)
+		}
+
 		// cors
 		app.Use(cors.New(cors.Config{
 			AllowOrigins:     "*",
@@ -33,11 +37,6 @@ func NewRouter(app *fiber.App, cfg *config.Config, pg *postgres.Postgres, l logg
 		// logger production
 		app.Use(middleware.Logger(l))
 		app.Use(middleware.Recovery(l))
-	}
-
-	// Swagger docs
-	if cfg.Swagger.Enabled {
-		setupSwagger(app, cfg)
 	}
 
 	apiV1 := app.Group("/api/v1")
