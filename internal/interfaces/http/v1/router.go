@@ -1,10 +1,13 @@
 package v1
 
 import (
+	"github/smile-ko/go-template/pkg/logger"
+	"github/smile-ko/go-template/pkg/postgres"
+
 	"github.com/gofiber/fiber/v2"
 )
 
-func RegisterRoutes(r fiber.Router) {
+func RegisterRoutes(r fiber.Router, pg *postgres.Postgres, l logger.Interface) {
 	h := NewHandler()
 
 	r.Get("/healthz", h.HealthCheck)

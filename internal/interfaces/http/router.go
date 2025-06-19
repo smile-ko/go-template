@@ -8,6 +8,7 @@ import (
 	v1 "github/smile-ko/go-template/internal/interfaces/http/v1"
 	v2 "github/smile-ko/go-template/internal/interfaces/http/v2"
 	"github/smile-ko/go-template/pkg/logger"
+	"github/smile-ko/go-template/pkg/postgres"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -15,7 +16,7 @@ import (
 	"github.com/gofiber/swagger"
 )
 
-func NewRouter(app *fiber.App, cfg *config.Config, l logger.Interface) {
+func NewRouter(app *fiber.App, cfg *config.Config, pg *postgres.Postgres, l logger.Interface) {
 	// Options
 	if cfg.App.EnvName == "dev" {
 		// cors
@@ -41,12 +42,12 @@ func NewRouter(app *fiber.App, cfg *config.Config, l logger.Interface) {
 
 	apiV1 := app.Group("/api/v1")
 	{
-		v1.RegisterRoutes(apiV1)
+		v1.RegisterRoutes(apiV1, pg, l)
 	}
 
 	apiV2 := app.Group("/api/v2")
 	{
-		v2.RegisterRoutes(apiV2)
+		v2.RegisterRoutes(apiV2, pg, l)
 	}
 }
 

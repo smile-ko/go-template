@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: go-template-db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=go_template
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - go_network
+
+  redis:
+    image: redis:6.2-alpine
+    container_name: go-template-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass redis
+    volumes:
+      - data_redis:/redis
+    networks:
+      - go_network
+
+  # app:
+  #   container_name: go-template-app
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #   ports:
+  #     - "8001:8001"
+  #   restart: unless-stopped
+  #   networks:
+  #     - go_network
+
+volumes:
+  data_redis:
+    driver: local
+  postgres_data:
+    driver: local
+
+networks:
+  go_network:
+    driver: bridge

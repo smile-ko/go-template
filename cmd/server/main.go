@@ -6,6 +6,7 @@ import (
 	"github/smile-ko/go-template/internal/interfaces/http"
 	"github/smile-ko/go-template/pkg/httpserver"
 	"github/smile-ko/go-template/pkg/logger"
+	"github/smile-ko/go-template/pkg/postgres"
 	"log"
 	"os"
 	"os/signal"
@@ -20,17 +21,31 @@ func main() {
 
 	l := logger.New(cfg.Log.Level)
 
-	// HTTP Server
-	httpServer := httpserver.New(httpserver.Port(cfg.HTTP.Port), httpserver.Prefork(cfg.HTTP.UsePreforkMode))
-	http.NewRouter(httpServer.App, cfg, l)
+	// Init Postgres
+	pg := postgres.NewOrGetSingleton(cfg)
+	defer pg.Close()
 
-	// Start servers
+	// Init HTTP server
+	httpServer := httpserver.New(
+		httpserver.Port(cfg.HTTP.Port),
+		httpserver.Prefork(cfg.HTTP.UsePreforkMode),
+	)
+
+	// Register routes (router.go)
+	http.NewRouter(httpServer.App, cfg, pg, l)
+
+	// Start HTTP Server
 	httpServer.Start()
 
-	// Waiting signal
+	// Handle graceful shutdown
+	waitForShutdown(httpServer, l)
+}
+
+func waitForShutdown(httpServer *httpserver.Server, l logger.Interface) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 
+	var err error
 	select {
 	case s := <-interrupt:
 		l.Info("app - Run - signal: %s", s.String())
@@ -38,7 +53,6 @@ func main() {
 		l.Error(fmt.Errorf("app - Run - httpServer.Notify: %w", err))
 	}
 
-	// Shutdown
 	err = httpServer.Shutdown()
 	if err != nil {
 		l.Error(fmt.Errorf("app - Run - httpServer.Shutdown: %w", err))
