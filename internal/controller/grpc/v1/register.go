@@ -1,7 +1,7 @@
 package v1
 
 import (
-	userv1 "github/smile-ko/go-template/docs/proto/user/v1/gen"
+	userv1 "github/smile-ko/go-template/api/proto/user/v1/gen"
 	"github/smile-ko/go-template/pkg/logger"
 	"github/smile-ko/go-template/pkg/postgres"
 

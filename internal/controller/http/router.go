@@ -1,8 +1,8 @@
 package http
 
 import (
+	fiberswaggerdocsV1 "github/smile-ko/go-template/api/openapi/v1"
 	"github/smile-ko/go-template/config"
-	fiberswaggerdocsV1 "github/smile-ko/go-template/docs/swagger/v1"
 	"github/smile-ko/go-template/internal/controller/http/middleware"
 	v1 "github/smile-ko/go-template/internal/controller/http/v1"
 	"github/smile-ko/go-template/pkg/logger"
