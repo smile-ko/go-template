@@ -14,18 +14,6 @@ services:
     networks:
       - go_network
 
-  redis:
-    image: redis:6.2-alpine
-    container_name: go-template-redis
-    restart: always
-    ports:
-      - "6379:6379"
-    command: redis-server --save 20 1 --loglevel warning --requirepass redis
-    volumes:
-      - data_redis:/redis
-    networks:
-      - go_network
-
   # app:
   #   container_name: go-template-app
   #   build:
@@ -41,8 +29,6 @@ services:
   #     - go_network
 
 volumes:
-  data_redis:
-    driver: local
   postgres_data:
     driver: local
 

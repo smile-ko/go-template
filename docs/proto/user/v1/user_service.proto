@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package grpc.v1;
+package user.v1;
 
-option go_package = "proto/gen/v1";
+option go_package = "github.com/smile-ko/go-template/docs/proto/user/v1/gen;userv1";
 
 message GetUserByIdReq {
   int32 id = 1;

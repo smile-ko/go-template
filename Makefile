@@ -1,17 +1,13 @@
 APP_NAME = server
 
-PROTO_DIR = proto
-OUT_DIR = proto/pb
 
 .PHONY: proto
-proto:
-	protoc --proto_path=$(PROTO_DIR) \
-	       --go_out=$(OUT_DIR) --go_opt=paths=source_relative \
-	       --go-grpc_out=$(OUT_DIR) --go-grpc_opt=paths=source_relative \
-	       $(shell find $(PROTO_DIR) -name '*.proto')
+proto-user:
+	protoc --proto_path=docs/proto/user/v1 \
+	       --go_out=docs/proto/user/v1/gen --go_opt=paths=source_relative \
+	       --go-grpc_out=docs/proto/user/v1/gen --go-grpc_opt=paths=source_relative \
+	      	docs/proto/user/v1/*.proto
 
-proto-clean:
-	rm -rf $(OUT_DIR)/*.pb.go $(OUT_DIR)/*.grpc.pb.go
 
 run:
 	go run ./cmd/$(APP_NAME)/

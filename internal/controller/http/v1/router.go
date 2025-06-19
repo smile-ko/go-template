@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func RegisterRoutes(r fiber.Router, pg *postgres.Postgres, l logger.Interface) {
+func NewV1Router(r fiber.Router, pg *postgres.Postgres, l logger.Interface) {
 	h := NewHandler()
 
 	r.Get("/healthz", h.HealthCheck)

@@ -16,6 +16,7 @@ type (
 		GRPC    GRPC
 		Metrics Metrics
 		Swagger Swagger
+		Kafka   Kafka
 	}
 
 	App struct {
@@ -48,6 +49,26 @@ type (
 
 	Swagger struct {
 		Enabled bool `env:"SWAGGER_ENABLED" envDefault:"false"`
+	}
+
+	Kafka struct {
+		Brokers  []string `env:"KAFKA_BROKERS,required"`
+		GroupID  string   `env:"KAFKA_GROUP_ID,required"`
+		Producer Producer
+		Consumer Consumer
+	}
+
+	Producer struct {
+		RequiredAcks int    `env:"KAFKA_PRODUCER_REQUIRED_ACKS" envDefault:"-1"`
+		Async        bool   `env:"KAFKA_PRODUCER_ASYNC" envDefault:"false"`
+		Compression  string `env:"KAFKA_PRODUCER_COMPRESSION" envDefault:"none"`
+	}
+
+	Consumer struct {
+		MinBytes    int    `env:"KAFKA_CONSUMER_MIN_BYTES" envDefault:"10000"`
+		MaxBytes    int    `env:"KAFKA_CONSUMER_MAX_BYTES" envDefault:"10000000"`
+		MaxWait     string `env:"KAFKA_CONSUMER_MAX_WAIT" envDefault:"1s"`
+		StartOffset string `env:"KAFKA_CONSUMER_START_OFFSET" envDefault:"latest"`
 	}
 )
 

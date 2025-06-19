@@ -2,11 +2,9 @@ package http
 
 import (
 	"github/smile-ko/go-template/config"
-	fiberswaggerdocsV1 "github/smile-ko/go-template/docs/v1"
-	fiberswaggerdocsV2 "github/smile-ko/go-template/docs/v2"
-	"github/smile-ko/go-template/internal/interfaces/http/middleware"
-	v1 "github/smile-ko/go-template/internal/interfaces/http/v1"
-	v2 "github/smile-ko/go-template/internal/interfaces/http/v2"
+	fiberswaggerdocsV1 "github/smile-ko/go-template/docs/swagger/v1"
+	"github/smile-ko/go-template/internal/controller/http/middleware"
+	v1 "github/smile-ko/go-template/internal/controller/http/v1"
 	"github/smile-ko/go-template/pkg/logger"
 	"github/smile-ko/go-template/pkg/postgres"
 
@@ -41,12 +39,7 @@ func NewRouter(app *fiber.App, cfg *config.Config, pg *postgres.Postgres, l logg
 
 	apiV1 := app.Group("/api/v1")
 	{
-		v1.RegisterRoutes(apiV1, pg, l)
-	}
-
-	apiV2 := app.Group("/api/v2")
-	{
-		v2.RegisterRoutes(apiV2, pg, l)
+		v1.NewV1Router(apiV1, pg, l)
 	}
 }
 
@@ -57,13 +50,5 @@ func setupSwagger(app *fiber.App, cfg *config.Config) {
 	fiberswaggerdocsV1.SwaggerInfov1.BasePath = "/api/v1"
 	app.Get("/v1/swagger/*", swagger.New(swagger.Config{
 		InstanceName: "v1",
-	}))
-
-	// Swagger V2
-	fiberswaggerdocsV2.SwaggerInfov2.Title = cfg.App.Name + " v2"
-	fiberswaggerdocsV2.SwaggerInfov2.Version = "v2"
-	fiberswaggerdocsV2.SwaggerInfov2.BasePath = "/api/v2"
-	app.Get("/v2/swagger/*", swagger.New(swagger.Config{
-		InstanceName: "v2",
 	}))
 }
