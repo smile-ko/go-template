@@ -1,0 +1,28 @@
+basePath: /api/v2
+info:
+  contact: {}
+  description: This is the v2 of the API
+  title: Example API v2
+  version: "2.0"
+paths:
+  /healthz:
+    get:
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      summary: Health check status
+      tags:
+      - internal
+  /hello:
+    get:
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      summary: test api
+      tags:
+      - internal
+swagger: "2.0"

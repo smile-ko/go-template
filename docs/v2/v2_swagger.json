@@ -1,0 +1,44 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is the v2 of the API",
+        "title": "Example API v2",
+        "contact": {},
+        "version": "2.0"
+    },
+    "basePath": "/api/v2",
+    "paths": {
+        "/healthz": {
+            "get": {
+                "tags": [
+                    "internal"
+                ],
+                "summary": "Health check status",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/hello": {
+            "get": {
+                "tags": [
+                    "internal"
+                ],
+                "summary": "test api",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        }
+    }
+}
