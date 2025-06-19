@@ -6,7 +6,7 @@ import (
 	"github/smile-ko/go-template/config"
 	"github/smile-ko/go-template/internal/controller/grpc"
 	"github/smile-ko/go-template/internal/controller/http"
-	grpcserver "github/smile-ko/go-template/pkg/grpc"
+	grpcserver "github/smile-ko/go-template/pkg/grpcserver"
 	"github/smile-ko/go-template/pkg/httpserver"
 	kafkabus "github/smile-ko/go-template/pkg/kafka"
 	"github/smile-ko/go-template/pkg/logger"
