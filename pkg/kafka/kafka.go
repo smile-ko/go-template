@@ -13,14 +13,18 @@ import (
 type MessageHandler func(ctx context.Context, message kafka.Message) error
 
 type Consumer struct {
-	conf   *config.Config
+	conf   *option
 	notify chan error
 	wg     sync.WaitGroup
 }
 
+type Producer struct {
+	writer *kafka.Writer
+}
+
 func NewConsumer(conf *config.Config) *Consumer {
 	return &Consumer{
-		conf:   conf,
+		conf:   newOption(conf),
 		notify: make(chan error, 1),
 	}
 }
@@ -33,29 +37,21 @@ func (c *Consumer) Handler(ctx context.Context, topic string, handler MessageHan
 	c.wg.Add(1)
 	defer c.wg.Done()
 
-	conf := c.conf.Kafka
-
-	maxWait, _ := time.ParseDuration(conf.Consumer.MaxWait)
-	startOffset := kafka.FirstOffset
-	if conf.Consumer.StartOffset == "last" {
-		startOffset = kafka.LastOffset
-	}
-
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     conf.Brokers,
+		Brokers:     c.conf.Brokers,
 		Topic:       topic,
-		GroupID:     conf.GroupID,
-		MinBytes:    conf.Consumer.MinBytes,
-		MaxBytes:    conf.Consumer.MaxBytes,
-		MaxWait:     maxWait,
-		StartOffset: startOffset,
+		GroupID:     c.conf.GroupID,
+		MinBytes:    c.conf.MinBytes,
+		MaxBytes:    c.conf.MaxBytes,
+		MaxWait:     c.conf.MaxWait,
+		StartOffset: c.conf.StartOffset,
 	})
 	defer func() {
 		_ = reader.Close()
-		log.Printf("Kafka [%s] stopped", topic)
+		log.Printf("Kafka Consumer [%s] stopped", topic)
 	}()
 
-	log.Printf("Kafka [%s] started", topic)
+	log.Printf("Kafka Consumer [%s] started", topic)
 
 	for {
 		select {
@@ -85,4 +81,29 @@ func (c *Consumer) Handler(ctx context.Context, topic string, handler MessageHan
 
 func (c *Consumer) Wait() {
 	c.wg.Wait()
+}
+
+func NewProducer(conf *config.Config, topic string) *Producer {
+	opt := newOption(conf)
+
+	return &Producer{
+		writer: &kafka.Writer{
+			Addr:         kafka.TCP(opt.Brokers...),
+			Topic:        topic,
+			RequiredAcks: opt.RequiredAcks,
+			MaxAttempts:  opt.MaxAttempts,
+		},
+	}
+}
+
+func (p *Producer) Produce(ctx context.Context, key, value []byte) error {
+	return p.writer.WriteMessages(ctx, kafka.Message{
+		Key:   key,
+		Value: value,
+		Time:  time.Now(),
+	})
+}
+
+func (p *Producer) Close() error {
+	return p.writer.Close()
 }

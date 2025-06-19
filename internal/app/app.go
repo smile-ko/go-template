@@ -46,7 +46,7 @@ func Run(cfg *config.Config) {
 
 	kafkaTopic := map[string]kafkabus.MessageHandler{
 		"demo-topic": func(ctx context.Context, msg kafka.Message) error {
-			fmt.Printf("Kafka received: %s", string(msg.Value))
+			fmt.Println("Kafka received: ", string(msg.Value))
 			return nil
 		},
 	}
