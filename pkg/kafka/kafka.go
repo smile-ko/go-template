@@ -3,11 +3,12 @@ package kafkabus
 import (
 	"context"
 	"github/smile-ko/go-template/config"
-	"log"
+	"github/smile-ko/go-template/pkg/logger"
 	"sync"
 	"time"
 
 	"github.com/segmentio/kafka-go"
+	"go.uber.org/zap"
 )
 
 type MessageHandler func(ctx context.Context, message kafka.Message) error
@@ -16,16 +17,19 @@ type Consumer struct {
 	conf   *option
 	notify chan error
 	wg     sync.WaitGroup
+	logger logger.ILogger
 }
 
 type Producer struct {
 	writer *kafka.Writer
+	logger logger.ILogger
 }
 
-func NewConsumer(conf *config.Config) *Consumer {
+func NewConsumer(conf *config.Config, l logger.ILogger) *Consumer {
 	return &Consumer{
 		conf:   newOption(conf),
 		notify: make(chan error, 1),
+		logger: l,
 	}
 }
 
@@ -48,10 +52,10 @@ func (c *Consumer) Handler(ctx context.Context, topic string, handler MessageHan
 	})
 	defer func() {
 		_ = reader.Close()
-		log.Printf("Kafka Consumer [%s] stopped", topic)
+		c.logger.Info("Kafka Consumer closed", zap.String("topic", topic))
 	}()
 
-	log.Printf("Kafka Consumer [%s] started", topic)
+	c.logger.Info("Kafka Consumer started", zap.String("topic", topic), zap.Strings("brokers", c.conf.Brokers))
 
 	for {
 		select {
@@ -63,17 +67,17 @@ func (c *Consumer) Handler(ctx context.Context, topic string, handler MessageHan
 				if ctx.Err() != nil {
 					return // shutdown triggered
 				}
-				log.Printf("Kafka [%s] FetchMessage error: %v", topic, err)
+				c.logger.Error("Kafka FetchMessage error", zap.String("topic", topic), zap.Error(err))
 				c.notify <- err
 				return
 			}
 
 			if err := handler(ctx, msg); err != nil {
-				log.Printf("Kafka [%s] Handler error: %v", topic, err)
+				c.logger.Error("Kafka Handler error", zap.String("topic", topic), zap.Error(err))
 			}
 
 			if err := reader.CommitMessages(ctx, msg); err != nil {
-				log.Printf("Kafka [%s] Commit error: %v", topic, err)
+				c.logger.Error("Kafka CommitMessages error", zap.String("topic", topic), zap.Error(err))
 			}
 		}
 	}
@@ -83,27 +87,37 @@ func (c *Consumer) Wait() {
 	c.wg.Wait()
 }
 
-func NewProducer(conf *config.Config, topic string) *Producer {
+func NewProducer(conf *config.Config, topic string, l logger.ILogger) *Producer {
 	opt := newOption(conf)
 
+	writer := &kafka.Writer{
+		Addr:         kafka.TCP(opt.Brokers...),
+		Topic:        topic,
+		RequiredAcks: opt.RequiredAcks,
+		MaxAttempts:  opt.MaxAttempts,
+	}
+
+	l.Info("Kafka Producer created", zap.String("topic", topic), zap.Strings("brokers", opt.Brokers))
+
 	return &Producer{
-		writer: &kafka.Writer{
-			Addr:         kafka.TCP(opt.Brokers...),
-			Topic:        topic,
-			RequiredAcks: opt.RequiredAcks,
-			MaxAttempts:  opt.MaxAttempts,
-		},
+		writer: writer,
+		logger: l,
 	}
 }
 
 func (p *Producer) Produce(ctx context.Context, key, value []byte) error {
-	return p.writer.WriteMessages(ctx, kafka.Message{
+	err := p.writer.WriteMessages(ctx, kafka.Message{
 		Key:   key,
 		Value: value,
 		Time:  time.Now(),
 	})
+	if err != nil {
+		p.logger.Error("Kafka Produce error", zap.Error(err))
+	}
+	return err
 }
 
 func (p *Producer) Close() error {
+	p.logger.Info("Kafka Producer closed")
 	return p.writer.Close()
 }

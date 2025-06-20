@@ -16,10 +16,12 @@ import (
 	"syscall"
 
 	"github.com/segmentio/kafka-go"
+	"go.uber.org/zap"
 )
 
 func Run(cfg *config.Config) {
-	l := logger.New(cfg.Log.Level)
+	l := logger.NewLogger(cfg)
+	defer l.Close()
 
 	// Init Postgres
 	pg := postgres.NewOrGetSingleton(cfg)
@@ -38,8 +40,12 @@ func Run(cfg *config.Config) {
 	grpcServer := grpcserver.New(grpcserver.Port(cfg.GRPC.Port))
 	grpc.RegisterGRPCServices(grpcServer.App, pg, l)
 
+	// Start HTTP Server
+	httpServer.Start()
+	grpcServer.Start()
+
 	// Kafka consumer
-	kafkaConsumer := kafkabus.NewConsumer(cfg)
+	kafkaConsumer := kafkabus.NewConsumer(cfg, l)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -55,31 +61,29 @@ func Run(cfg *config.Config) {
 		go kafkaConsumer.Handler(ctx, topic, handler)
 	}
 
-	// Start HTTP Server
-	httpServer.Start()
-	grpcServer.Start()
-
 	// Handle graceful shutdown
 	waitForShutdown(cancel, kafkaConsumer, httpServer, grpcServer, l)
 }
 
-func waitForShutdown(cancel context.CancelFunc, kafkaConsumer *kafkabus.Consumer, httpServer *httpserver.Server, grpcServer *grpcserver.Server, l logger.Interface) {
+func waitForShutdown(cancel context.CancelFunc, kafkaConsumer *kafkabus.Consumer, httpServer *httpserver.Server, grpcServer *grpcserver.Server, l logger.ILogger) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 
-	var err error
 	select {
 	case s := <-interrupt:
-		l.Info("app - Run - signal: %s", s.String())
+		l.Info("App - Run - signal", zap.String("signal", s.String()))
 		cancel()
-	case err = <-httpServer.Notify():
-		l.Error(fmt.Errorf("app - Run - httpServer.Notify: %w", err))
+
+	case err := <-httpServer.Notify():
+		l.Error("App - Run - httpServer.Notify", zap.Error(err))
 		cancel()
-	case err = <-grpcServer.Notify():
-		l.Error(fmt.Errorf("app - Run - grpcServer.Notify: %w", err))
+
+	case err := <-grpcServer.Notify():
+		l.Error("App - Run - grpcServer.Notify", zap.Error(err))
 		cancel()
-	case err = <-kafkaConsumer.Notify():
-		l.Error(fmt.Errorf("app - Run - kafkaConsumer.Notify: %w", err))
+
+	case err := <-kafkaConsumer.Notify():
+		l.Error("App - Run - kafkaConsumer.Notify", zap.Error(err))
 		cancel()
 	}
 

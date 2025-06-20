@@ -31,7 +31,14 @@ type (
 	}
 
 	Log struct {
-		Level string `env:"LOG_LEVEL,required"`
+		Level         string `env:"LOG_LEVEL,required"`
+		FileLogName   string `env:"LOG_FILE_LOG_NAME"`
+		MaxSize       int    `env:"MAX_SIZE"`
+		MaxBackups    int    `env:"LOG_MAX_BACKUPS"`
+		MaxAge        int    `env:"LOG_MAX_AGE"`
+		Compress      bool   `env:"LOG_COMPRESS"`
+		ConsoleOutput bool   `env:"LOG_CONSOLE_OUTPUT" default:"true"`
+		UseJSON       bool   `env:"LOG_USE_JSON" default:"false"`
 	}
 
 	PG struct {

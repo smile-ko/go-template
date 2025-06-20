@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-func RegisterGRPCServices(app *grpc.Server, pg *postgres.Postgres, l logger.Interface) {
+func RegisterGRPCServices(app *grpc.Server, pg *postgres.Postgres, l logger.ILogger) {
 	{
 		v1.RegisterV1GRPC(app, pg, l)
 	}

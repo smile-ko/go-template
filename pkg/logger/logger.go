@@ -1,102 +1,91 @@
 package logger
 
 import (
-	"fmt"
+	"github/smile-ko/go-template/config"
+	"log"
 	"os"
-	"strings"
 
-	"github.com/rs/zerolog"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-// Interface -.
-type Interface interface {
-	Debug(message any, args ...any)
-	Info(message string, args ...any)
-	Warn(message string, args ...any)
-	Error(message any, args ...any)
-	Fatal(message any, args ...any)
+type ILogger interface {
+	Info(msg string, fields ...zap.Field)
+	Debug(msg string, fields ...zap.Field)
+	Warn(msg string, fields ...zap.Field)
+	Error(msg string, fields ...zap.Field)
+	Fatal(msg string, fields ...zap.Field)
+	Close()
 }
 
-// Logger -.
-type Logger struct {
-	logger *zerolog.Logger
+type LoggerZap struct {
+	zapLogger *zap.Logger
+	syncer    zapcore.WriteSyncer
 }
 
-var _ Interface = (*Logger)(nil)
+func NewLogger(cfg *config.Config) ILogger {
+	encoder := getEncoder(cfg.Log.UseJSON)
+	writer := getLogWriter(&cfg.Log, cfg.Log.ConsoleOutput)
 
-// New -.
-func New(level string) *Logger {
-	var l zerolog.Level
+	level := getZapLevel(cfg.Log.Level)
 
-	switch strings.ToLower(level) {
-	case "error":
-		l = zerolog.ErrorLevel
-	case "warn":
-		l = zerolog.WarnLevel
-	case "info":
-		l = zerolog.InfoLevel
-	case "debug":
-		l = zerolog.DebugLevel
-	default:
-		l = zerolog.InfoLevel
-	}
+	core := zapcore.NewCore(encoder, writer, level)
 
-	zerolog.SetGlobalLevel(l)
+	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 
-	skipFrameCount := 3
-	logger := zerolog.New(os.Stdout).With().Timestamp().CallerWithSkipFrameCount(zerolog.CallerSkipFrameCount + skipFrameCount).Logger()
-
-	return &Logger{
-		logger: &logger,
+	return &LoggerZap{
+		zapLogger: logger,
+		syncer:    writer,
 	}
 }
 
-// Debug -.
-func (l *Logger) Debug(message any, args ...any) {
-	l.msg("debug", message, args...)
+func (l *LoggerZap) Info(msg string, fields ...zap.Field)  { l.zapLogger.Info(msg, fields...) }
+func (l *LoggerZap) Debug(msg string, fields ...zap.Field) { l.zapLogger.Debug(msg, fields...) }
+func (l *LoggerZap) Warn(msg string, fields ...zap.Field)  { l.zapLogger.Warn(msg, fields...) }
+func (l *LoggerZap) Error(msg string, fields ...zap.Field) { l.zapLogger.Error(msg, fields...) }
+func (l *LoggerZap) Fatal(msg string, fields ...zap.Field) { l.zapLogger.Fatal(msg, fields...) }
+
+func (l *LoggerZap) Close() {
+	_ = l.syncer.Sync()
+	_ = l.zapLogger.Sync()
 }
 
-// Info -.
-func (l *Logger) Info(message string, args ...any) {
-	l.log(message, args...)
-}
+func getEncoder(useJSON bool) zapcore.Encoder {
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.TimeKey = "time"
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 
-// Warn -.
-func (l *Logger) Warn(message string, args ...any) {
-	l.log(message, args...)
-}
-
-// Error -.
-func (l *Logger) Error(message any, args ...any) {
-	if l.logger.GetLevel() == zerolog.DebugLevel {
-		l.Debug(message, args...)
+	if useJSON {
+		encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+		return zapcore.NewJSONEncoder(encoderConfig)
 	}
-
-	l.msg("error", message, args...)
+	return zapcore.NewConsoleEncoder(encoderConfig)
 }
 
-// Fatal -.
-func (l *Logger) Fatal(message any, args ...any) {
-	l.msg("fatal", message, args...)
+func getLogWriter(cfg *config.Log, consoleOutput bool) zapcore.WriteSyncer {
+	fileWriter := zapcore.AddSync(&lumberjack.Logger{
+		Filename:   cfg.FileLogName,
+		MaxSize:    cfg.MaxSize,
+		MaxBackups: cfg.MaxBackups,
+		MaxAge:     cfg.MaxAge,
+		Compress:   cfg.Compress,
+	})
 
-	os.Exit(1)
-}
-
-func (l *Logger) log(message string, args ...any) {
-	if len(args) == 0 {
-		l.logger.Info().Msg(message)
-	} else {
-		l.logger.Info().Msgf(message, args...)
+	if consoleOutput {
+		return zapcore.NewMultiWriteSyncer(fileWriter, zapcore.AddSync(os.Stdout))
 	}
+	return fileWriter
 }
 
-func (l *Logger) msg(level string, message any, args ...any) {
-	switch msg := message.(type) {
-	case error:
-		l.log(msg.Error(), args...)
-	case string:
-		l.log(msg, args...)
-	default:
-		l.log(fmt.Sprintf("%s message %v has unknown type %v", level, message, msg), args...)
+func getZapLevel(level string) zapcore.Level {
+	var lvl zapcore.Level
+	if err := lvl.UnmarshalText([]byte(level)); err != nil {
+		log.Printf("invalid log level '%s', fallback to INFO", level)
+		lvl = zapcore.InfoLevel
 	}
+	return lvl
 }

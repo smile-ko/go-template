@@ -10,7 +10,6 @@ require (
 	github.com/gofiber/swagger v1.1.1
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/joho/godotenv v1.5.1
-	github.com/rs/zerolog v1.34.0
 	github.com/swaggo/swag v1.16.4
 	google.golang.org/grpc v1.73.0
 )
@@ -18,7 +17,9 @@ require (
 require (
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/segmentio/kafka-go v0.4.48
+	go.uber.org/zap v1.13.0
 	google.golang.org/protobuf v1.36.6
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (
@@ -60,7 +61,9 @@ require (
 	go.opentelemetry.io/otel v1.36.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.36.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.5.0 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
+	golang.org/x/lint v0.0.0-20190930215403-16217165b5de // indirect
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
