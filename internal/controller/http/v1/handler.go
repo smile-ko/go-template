@@ -10,18 +10,6 @@ func NewHandler() *Handler {
 	return &Handler{}
 }
 
-// HealthCheck godoc
-// @Summary  Health check status
-// @Tags     internal
-// @Success  200
-// @Failure  500
-// @Router   /healthz [get]
-func (h *Handler) HealthCheck(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{
-		"status": "ok",
-	})
-}
-
 // Hello godoc
 // @Summary  test api
 // @Tags     internal

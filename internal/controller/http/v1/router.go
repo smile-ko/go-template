@@ -10,6 +10,5 @@ import (
 func NewV1Router(r fiber.Router, pg *postgres.Postgres, l logger.ILogger) {
 	h := NewHandler()
 
-	r.Get("/healthz", h.HealthCheck)
 	r.Get("/hello", h.Hello)
 }

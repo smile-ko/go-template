@@ -15,22 +15,6 @@ const docTemplatev1 = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/healthz": {
-            "get": {
-                "tags": [
-                    "internal"
-                ],
-                "summary": "Health check status",
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
-        },
         "/hello": {
             "get": {
                 "tags": [

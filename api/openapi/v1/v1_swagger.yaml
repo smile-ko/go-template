@@ -5,16 +5,6 @@ info:
   title: Example API v1
   version: "1.0"
 paths:
-  /healthz:
-    get:
-      responses:
-        "200":
-          description: OK
-        "500":
-          description: Internal Server Error
-      summary: Health check status
-      tags:
-      - internal
   /hello:
     get:
       responses:
@@ -24,5 +14,5 @@ paths:
           description: Internal Server Error
       summary: test api
       tags:
-      - internal
+        - internal
 swagger: "2.0"
